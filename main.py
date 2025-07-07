@@ -1,40 +1,42 @@
-from flask import Flask, jsonify
-from datetime import datetime
+import requests
+import time
 import random
 
-app = Flask(__name__)
+TOKEN = '7671287681:AAGHheO_e8gy-qWSpG8mOGmCby-SoIEtjkc'
+CHAT_ID = '6843291533'
+API_URL = 'https://xauusd-ai-signal-production.up.railway.app/api/signal'
 
-@app.route('/api/signal', methods=['GET'])
+def send_telegram(msg):
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    data = {
+        'chat_id': CHAT_ID,
+        'text': msg
+    }
+    try:
+        requests.post(url, data=data)
+        print("✅ Kirim sinyal ke Telegram sukses")
+    except Exception as e:
+        print("❌ Gagal kirim Telegram:", e)
+
 def get_signal():
-    direction = random.choice(["BUY", "SELL"])
-    entry = round(random.uniform(3300, 3315), 2)
-    sl = round(entry - 8, 2) if direction == "BUY" else round(entry + 8, 2)
-    tp1 = round(entry + 7, 2) if direction == "BUY" else round(entry - 7, 2)
-    tp2 = round(tp1 + 10, 2) if direction == "BUY" else round(tp1 - 12, 2)
-    rsi = round(random.uniform(40, 60), 1)
-    ma20 = round(entry + random.uniform(-1, 1), 1)
-    ma50 = round(entry + random.uniform(-1.5, 1.5), 1)
-    pattern = random.choice(["Bullish Engulfing", "Bearish Rejection", "Doji", "Pin Bar"])
-    tf = f"{direction} | {direction} | {direction}"
-    confidence = random.randint(85, 96)
-    now = datetime.now().strftime("%H:%M WIB")
-    ps_note = "Sentimen pasar sedang mendukung arah " + ("naik" if direction == "BUY" else "turun") + " berdasarkan berita ekonomi terbaru."
+    try:
+        r = requests.get(API_URL, timeout=10)
+        return r.json().get('message')
+    except Exception as e:
+        print("❌ Gagal ambil sinyal AI:", e)
+        return None
 
-    message = f"""🤖 Sinyal {direction} XAU/USD
-📍 Entry: {entry}
-⛔ SL: {sl}
-🎯 TP1: {tp1}
-🎯 TP2: {tp2}
-📊 RSI: {rsi} – {"kuat" if rsi > 50 else "lemah"}, cenderung {"bullish" if rsi > 50 else "bearish"}
-📈 MA20: {ma20}, MA50: {ma50}
-📉 Pattern: {pattern} (TF 30M)
-📶 TF: {tf}
-🧠 Confidence: {confidence}%
-🕒 {now}
-📰 PS: {ps_note}
-"""
+def main_loop():
+    while True:
+        print("🚀 Ambil sinyal terbaru...")
+        signal = get_signal()
+        if signal:
+            send_telegram(signal)
+        else:
+            send_telegram("⚠️ Gagal ambil sinyal AI.")
+        wait_time = random.randint(900, 1800)  # 15-30 menit random
+        print(f"⏳ Tunggu {wait_time//60} menit sebelum request berikutnya...\n")
+        time.sleep(wait_time)
 
-    return jsonify({'message': message})
-
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
+if __name__ == "__main__":
+    main_loop()
