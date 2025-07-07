@@ -1,35 +1,43 @@
 import os
-from flask import Flask, jsonify
-from datetime import datetime
+import requests
+import time
+import random
 
-app = Flask(__name__)
+# Token dan Chat ID Telegram
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")  # Masukkan ke Railway sebagai VARIABLE
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")  # Masukkan ke Railway juga
 
-@app.route("/")
-def home():
-    return "✅ Server AI XAU/USD Aktif"
+# URL API sinyal AI kamu
+AI_SIGNAL_URL = "https://xauusd-ai-signal-production.up.railway.app/api/signal"
 
-@app.route("/api/signal")
-def signal():
-    now = datetime.now()
-    jam = now.strftime("%H:%M WIB")
+def get_signal():
+    try:
+        response = requests.get(AI_SIGNAL_URL, timeout=10)
+        data = response.json()
+        return data.get("message", "❌ Tidak ada sinyal.")
+    except Exception as e:
+        print("❌ Gagal ambil sinyal AI:", e)
+        return "❌ Gagal ambil sinyal AI dari server."
 
-    signal_data = {
-        "message": f"""🤖 Sinyal SELL XAU/USD
-📍 Entry: 3309.50
-⛔ SL: 3314.50
-🎯 TP1: 3300.00
-🎯 TP2: 3288.00
-📊 RSI: 47.1 – lemah, cenderung bearish
-📈 MA20: 3308.7, MA50: 3310.5
-📉 Pattern: Bearish Rejection (TF 30M)
-📶 TF: SELL | SELL | SELL
-🧠 Confidence: 91%
-🕒 {jam}
-📰 PS: Tekanan jual dipicu sentimen dagang AS, pelemahan demand safe-haven dorong potensi lanjut turun ke bawah 3300."""
+def send_to_telegram(msg):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": msg
     }
+    try:
+        response = requests.post(url, data=payload)
+        print(f"✅ Kirim sinyal ke Telegram sukses ({response.status_code})")
+    except Exception as e:
+        print("❌ Gagal kirim ke Telegram:", e)
 
-    return jsonify(signal_data)
+# Loop utama (auto every 15–30 menit)
+while True:
+    print("\n🚀 Ambil sinyal terbaru...")
+    message = get_signal()
+    print("📤 Kirim ke Telegram...")
+    send_to_telegram(message)
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    delay = random.randint(900, 1800)  # 15 - 30 menit
+    print(f"⏳ Tunggu {delay // 60} menit sebelum request berikutnya...")
+    time.sleep(delay)
