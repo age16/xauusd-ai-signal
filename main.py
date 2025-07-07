@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 @app.route('/api/signal', methods=['GET'])
 def get_signal():
-    # Simulasi data analisis (nanti bisa diganti dengan hasil prediksi real)
+    # Simulasi data analisis (ganti dengan real prediksi kalau sudah)
     direction = random.choice(["BUY", "SELL"])
     entry = round(random.uniform(3300, 3315), 2)
     sl = round(entry - 8, 2) if direction == "BUY" else round(entry + 8, 2)
@@ -17,7 +17,7 @@ def get_signal():
     ma50 = round(entry + random.uniform(-1.5, 1.5), 1)
     pattern = random.choice(["Bullish Engulfing", "Bearish Rejection", "Doji", "Pin Bar"])
     tf = f"{direction} | {direction} | {direction}"
-    confidence = random.randint(80, 95)
+    confidence = random.randint(85, 96)
     now = datetime.now().strftime("%H:%M WIB")
     ps_note = "Sentimen pasar sedang mendukung arah " + ("naik" if direction == "BUY" else "turun") + " berdasarkan berita ekonomi terbaru."
 
