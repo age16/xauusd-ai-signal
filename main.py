@@ -1,43 +1,18 @@
 import os
-import requests
-import time
-import random
+from flask import Flask, jsonify
 
-# Token dan Chat ID Telegram
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")  # Masukkan ke Railway sebagai VARIABLE
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")  # Masukkan ke Railway juga
+app = Flask(__name__)
 
-# URL API sinyal AI kamu
-AI_SIGNAL_URL = "https://xauusd-ai-signal-production.up.railway.app/api/signal"
+@app.route("/")
+def home():
+    return "✅ Server AI XAU/USD Aktif"
 
-def get_signal():
-    try:
-        response = requests.get(AI_SIGNAL_URL, timeout=10)
-        data = response.json()
-        return data.get("message", "❌ Tidak ada sinyal.")
-    except Exception as e:
-        print("❌ Gagal ambil sinyal AI:", e)
-        return "❌ Gagal ambil sinyal AI dari server."
+@app.route("/api/signal")
+def signal():
+    return jsonify({
+        "message": "🤖 AI Signal XAU/USD\n📈 Sinyal: BUY\n💰 Harga: 3310.45\n🎯 TP: 3318.00\n⛔ SL: 3302.00\n🧠 Confidence: 92%"
+    })
 
-def send_to_telegram(msg):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": msg
-    }
-    try:
-        response = requests.post(url, data=payload)
-        print(f"✅ Kirim sinyal ke Telegram sukses ({response.status_code})")
-    except Exception as e:
-        print("❌ Gagal kirim ke Telegram:", e)
-
-# Loop utama (auto every 15–30 menit)
-while True:
-    print("\n🚀 Ambil sinyal terbaru...")
-    message = get_signal()
-    print("📤 Kirim ke Telegram...")
-    send_to_telegram(message)
-
-    delay = random.randint(900, 1800)  # 15 - 30 menit
-    print(f"⏳ Tunggu {delay // 60} menit sebelum request berikutnya...")
-    time.sleep(delay)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
