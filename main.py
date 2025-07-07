@@ -6,7 +6,6 @@ app = Flask(__name__)
 
 @app.route('/api/signal', methods=['GET'])
 def get_signal():
-    # Simulasi data analisis (ganti dengan real prediksi kalau sudah)
     direction = random.choice(["BUY", "SELL"])
     entry = round(random.uniform(3300, 3315), 2)
     sl = round(entry - 8, 2) if direction == "BUY" else round(entry + 8, 2)
@@ -38,4 +37,4 @@ def get_signal():
     return jsonify({'message': message})
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host="0.0.0.0", port=5000)
